@@ -43,13 +43,13 @@ pnpm start
 
 ## 4. 체크리스트 (Phase 1)
 
-| 항목 | 확인 |
-|------|------|
-| Cesium 3D 글로브가 화면에 표시됨 | ☐ |
-| 초기 카메라가 테헤란(Tehran) 근처로 이동함 | ☐ |
-| 줌/회전/이동 등 기본 네비게이션 동작 | ☐ |
-| baseLayerPicker(레이어 선택), 홈 버튼 등 UI 표시 | ☐ |
-| `pnpm run build` 성공 (필요 시 `DISABLE_ESLINT_PLUGIN=true`) | ☐ |
+| 항목                                                         | 확인 |
+| ------------------------------------------------------------ | ---- |
+| Cesium 3D 글로브가 화면에 표시됨                             | ☑    |
+| 초기 카메라가 테헤란(Tehran) 근처로 이동함                   | ☑    |
+| 줌/회전/이동 등 기본 네비게이션 동작                         | ☑    |
+| baseLayerPicker(레이어 선택), 홈 버튼 등 UI 표시             | ☑    |
+| `pnpm run build` 성공 (필요 시 `DISABLE_ESLINT_PLUGIN=true`) | ☑    |
 
 ## 5. Commit 메시지 예시 (로드맵 기준)
 
