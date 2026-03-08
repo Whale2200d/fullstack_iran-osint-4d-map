@@ -18,7 +18,7 @@
 
 1. **1~2주: AI 에이전트 기본 잡기** (가장 중요!)
    - Claude.ai / Gemini / Grok 무료로 써서 "이란 OSINT 데이터 fetch 스크립트 만들어줘" 프롬프트 연습.
-   - LangChain 튜토리얼 (공식 docs + YouTube) → Tools + Agents 만들기.
+   - LangChain 튜토리얼 (공식 docs + YouTube) → Tools + Agents 만들기
    - 목표: 3~5개 API 동시에 호출하는 swarm 스크립트 완성.
 
 2. **2~4주: 3D 지도 베이스라인 만들기**
@@ -44,5 +44,23 @@
 - **주의**: OSINT 스크래핑 시 robots.txt 준수, rate limit 지키기. 군사 민감 데이터라 "교육/연구용" 명시.
 - **시작점**: GitHub에 "osint-geospatial" "cesium-osint" 검색 → 비슷한 오픈소스 fork해서 시작.
 
-당신이 지금 어느 정도 코딩 수준인지(예: JS/Python 기본 아는지, API 써본 적 있는지) 알려주시면 더 구체적인 다음 스텝(특정 튜토리얼 링크, 코드 템플릿) 드릴게요.  
-Bilawal처럼 "just vibe-coded" 해보는 재미가 쏠쏠할 거예요! 🚀
+## 핵심 용어
+
+1. OSINT (Open Source Intelligence)
+   - 군사/정부가 비밀리에 모으는 정보가 아니라, 누구나 접근 가능한 데이터를 의미함
+   - 인터넷·공개 사이트·소셜 미디어·항공추적 사이트 등
+   - 예시
+     - Flightradar24: 실시간 비행기 위치 (테헤란 상공 비행 금지 구역 감지)
+     - MarinTraffic: 배 움직임 (호르무즈 해협 선박 다크 모드)
+     - GPSJam.org: GPS 신호 방해 지역
+     - Sentinel Hub: 공개 위성 사진 사이트, 위성 지나가는 타이밍
+     - X, News: 트위터나 뉴스에서 사람들이 올린 영상·사진·증언
+2. AI Agent Swarm
+   - 여러 개의 AI 프로그램(Grok, Claude, Gemini 등으로 자동 스크립트)을 동시에 돌린 형태
+   - 각 AI가 다른 사이트를 맡아서 데이터를 자동으로 모으고 정리
+
+3. Before the caches cleared
+   - 캐시(Cache)는 인터넷 임시 저장소
+   - Flightradar24, 위성 사이트에서 실시간 데이터(비행 경로, 위성 패스 등)는 몇 시간 ~ 하루 정도만 보관되고, 오래된 건 자동 삭제되거나 업데이트되서 사라진다.
+   - 특히 전쟁처럼 민감한 상황에선 정부·회사 측에서 일부 데이터를 빨리 지우거나 접근 제한할 수 있다.
+   - 공습 직후 몇 시간 안에 "그 순간의 데이터"를 잡아두지 않으면 영원히 볼 수 없다는 뜻이다. 그래서 공습 시작과 동시에 AI를 풀어서 "캐시가 지워지기 전에" 서둘러 캡처(저장)한 것이다. (이후 3D 영상으로 재생)
