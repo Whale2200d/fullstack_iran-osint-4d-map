@@ -1,0 +1,90 @@
+.timeline-slider-wrap {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 130px;
+  min-height: 130px;
+  z-index: 1100;
+  background: rgba(20, 20, 25, 0.95);
+  border-top: 2px solid rgba(255, 255, 255, 0.25);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+.timeline-slider-label {
+  flex: 0 0 auto;
+  padding: 4px 10px 2px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+  letter-spacing: 0.02em;
+}
+
+.timeline-slider {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+}
+
+.timeline-slider .vis-timeline {
+  border: none;
+}
+
+.timeline-slider .vis-item {
+  border-radius: 4px;
+}
+
+.timeline-slider .vis-item-type-airstrike {
+  background-color: rgba(255, 50, 50, 0.8);
+  border-color: #ff3232;
+}
+
+.timeline-slider .vis-item-type-gps_jam {
+  background-color: rgba(255, 230, 50, 0.8);
+  border-color: #ffe632;
+}
+
+.timeline-slider .vis-item-type-military_activity {
+  background-color: rgba(80, 130, 255, 0.8);
+  border-color: #5082ff;
+}
+
+.clock-controls {
+  position: absolute;
+  bottom: 134px;
+  left: 12px;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(20, 20, 25, 0.9);
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.clock-controls button {
+  padding: 6px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+  background: rgba(60, 60, 70, 0.9);
+  color: #eee;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.clock-controls button:hover {
+  background: rgba(80, 80, 90, 0.95);
+}
+
+.clock-controls button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.clock-controls .clock-time {
+  font-size: 12px;
+  color: #aaa;
+  font-family: monospace;
+}
