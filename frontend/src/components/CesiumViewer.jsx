@@ -1,5 +1,6 @@
 import React, { useRef, useEffect } from "react";
 import * as Cesium from "cesium";
+import { sampleEvents, eventTypeColor } from "../data/sampleEvents";
 import "./CesiumViewer.css";
 
 // Cesium Ion 무료 토큰: https://cesium.com/ion/tokens 에서 발급 후 .env에 REACT_APP_CESIUM_ION_TOKEN 설정
@@ -41,6 +42,22 @@ function CesiumViewer() {
     });
 
     viewerRef.current = viewer;
+
+    sampleEvents.forEach((evt) => {
+      const [r, g, b, a] = eventTypeColor[evt.type] || eventTypeColor.default;
+      viewer.entities.add({
+        id: evt.id,
+        position: Cesium.Cartesian3.fromDegrees(evt.lon, evt.lat, 0),
+        point: {
+          pixelSize: 12,
+          color: new Cesium.Color(r, g, b, a),
+          outlineColor: Cesium.Color.WHITE,
+          outlineWidth: 2,
+        },
+        name: `${evt.type} · ${evt.time.slice(0, 16).replace("T", " ")}Z`,
+        description: `<p>${evt.desc}</p><p><small>${evt.time} | ${evt.type}</small></p>`,
+      });
+    });
 
     (async () => {
       try {
