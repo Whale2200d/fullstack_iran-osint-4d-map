@@ -22,7 +22,7 @@
    - 목표: 3~5개 API 동시에 호출하는 swarm 스크립트 완성.
 
 2. **2~4주: 3D 지도 베이스라인 만들기**
-   - Cesium Sandcastle (https://sandcastle.cesium.com/)에서 기본 3D globe + entity 추가 실습.
+   - Cesium Sandcastle ([https://sandcastle.cesium.com/](https://sandcastle.cesium.com/))에서 기본 3D globe + entity 추가 실습.
    - Mapbox GL JS + timestamp 필터링 예제 (이전 대화 코드 업그레이드).
    - 시간 슬라이더 붙이기 → vis-timeline + Cesium Clock 연동.
 
