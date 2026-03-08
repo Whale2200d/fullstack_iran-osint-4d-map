@@ -4,14 +4,20 @@ import { eventTypeColor } from "../data/sampleEvents";
 import { useOSINTEvents } from "../hooks/useOSINTEvents";
 import TimelineSlider, { TIMELINE_MIN, TIMELINE_MAX } from "./TimelineSlider";
 import "./CesiumViewer.css";
+import type { OsintEvent } from "../types/osint";
 
 // Cesium Ion 무료 토큰: https://cesium.com/ion/tokens 에서 발급 후 .env에 REACT_APP_CESIUM_ION_TOKEN 설정
-const CESIUM_ION_TOKEN = process.env.REACT_APP_CESIUM_ION_TOKEN || "";
+const CESIUM_ION_TOKEN = process.env.REACT_APP_CESIUM_ION_TOKEN ?? "";
 
 const CLOCK_START = Cesium.JulianDate.fromDate(TIMELINE_MIN);
 const CLOCK_END = Cesium.JulianDate.fromDate(TIMELINE_MAX);
 
-function setEntitiesVisibilityByRange(viewer, events, start, end) {
+function setEntitiesVisibilityByRange(
+  viewer: Cesium.Viewer,
+  events: OsintEvent[],
+  start: Date,
+  end: Date
+): void {
   if (!viewer || viewer.isDestroyed()) return;
   const startMs = start.getTime();
   const endMs = end.getTime();
@@ -24,7 +30,11 @@ function setEntitiesVisibilityByRange(viewer, events, start, end) {
   });
 }
 
-function setEntitiesVisibilityByCurrentTime(viewer, events, currentTime) {
+function setEntitiesVisibilityByCurrentTime(
+  viewer: Cesium.Viewer,
+  events: OsintEvent[],
+  currentTime: Cesium.JulianDate
+): void {
   if (!viewer || viewer.isDestroyed()) return;
   const currentMs = Cesium.JulianDate.toDate(currentTime).getTime();
   events.forEach((evt) => {
@@ -36,10 +46,13 @@ function setEntitiesVisibilityByCurrentTime(viewer, events, currentTime) {
   });
 }
 
-function addEntitiesFromEvents(viewer, events) {
+function addEntitiesFromEvents(
+  viewer: Cesium.Viewer,
+  events: OsintEvent[]
+): void {
   if (!viewer || viewer.isDestroyed()) return;
   events.forEach((evt) => {
-    const [r, g, b, a] = eventTypeColor[evt.type] || eventTypeColor.default;
+    const [r, g, b, a] = eventTypeColor[evt.type] ?? eventTypeColor.default;
     viewer.entities.add({
       id: evt.id,
       position: Cesium.Cartesian3.fromDegrees(evt.lon, evt.lat, 0),
@@ -49,8 +62,8 @@ function addEntitiesFromEvents(viewer, events) {
         outlineColor: Cesium.Color.WHITE,
         outlineWidth: 2,
       },
-      name: `${evt.type} · ${(evt.time || "").slice(0, 16).replace("T", " ")}Z`,
-      description: `<p>${evt.desc || "—"}</p><p><small>${evt.time || ""} | ${evt.type}</small></p>`,
+      name: `${evt.type} · ${(evt.time ?? "").slice(0, 16).replace("T", " ")}Z`,
+      description: `<p>${evt.desc ?? "—"}</p><p><small>${evt.time ?? ""} | ${evt.type}</small></p>`,
     });
   });
 }
@@ -58,24 +71,30 @@ function addEntitiesFromEvents(viewer, events) {
 /**
  * Cesium 3D Globe 뷰어 + 타임라인 & 4D + OSINT(ACLED) 연동
  */
-function CesiumViewer() {
-  const containerRef = useRef(null);
-  const viewerRef = useRef(null);
-  const rangeRef = useRef({ start: TIMELINE_MIN, end: TIMELINE_MAX });
+function CesiumViewer(): React.ReactElement {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const viewerRef = useRef<Cesium.Viewer | null>(null);
+  const rangeRef = useRef<{ start: Date; end: Date }>({
+    start: TIMELINE_MIN,
+    end: TIMELINE_MAX,
+  });
   const [isPlaying, setIsPlaying] = useState(false);
   const [clockTime, setClockTime] = useState(TIMELINE_MIN.getTime());
 
   const { events, loading, error, reload } = useOSINTEvents();
-  const eventsRef = useRef(events);
+  const eventsRef = useRef<OsintEvent[]>(events);
   eventsRef.current = events;
 
-  const onRangeChange = useCallback((start, end) => {
-    rangeRef.current = { start, end };
-    const viewer = viewerRef.current;
-    if (viewer && !viewer.isDestroyed()) {
-      setEntitiesVisibilityByRange(viewer, events, start, end);
-    }
-  }, [events]);
+  const onRangeChange = useCallback(
+    (start: Date, end: Date) => {
+      rangeRef.current = { start, end };
+      const viewer = viewerRef.current;
+      if (viewer && !viewer.isDestroyed()) {
+        setEntitiesVisibilityByRange(viewer, events, start, end);
+      }
+    },
+    [events]
+  );
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -100,7 +119,7 @@ function CesiumViewer() {
       skyBox: false,
       skyAtmosphere: false,
       scene3DOnly: true,
-    });
+    } as any);
 
     viewer.clock.startTime = CLOCK_START.clone();
     viewer.clock.stopTime = CLOCK_END.clone();
@@ -111,32 +130,45 @@ function CesiumViewer() {
 
     viewerRef.current = viewer;
 
-    const onTick = () => {
+    const onTick = (): void => {
       if (!viewerRef.current || viewerRef.current.isDestroyed()) return;
       const v = viewerRef.current;
       if (v.clock.shouldAnimate) {
-        setEntitiesVisibilityByCurrentTime(v, eventsRef.current, v.clock.currentTime);
+        setEntitiesVisibilityByCurrentTime(
+          v,
+          eventsRef.current,
+          v.clock.currentTime
+        );
       }
       setClockTime(Cesium.JulianDate.toDate(v.clock.currentTime).getTime());
     };
     const removeTick = viewer.scene.preRender.addEventListener(onTick);
 
     (async () => {
-      const stillActive = () => viewerRef.current === viewer && !viewer.isDestroyed();
+      const stillActive = () =>
+        viewerRef.current === viewer && !viewer.isDestroyed();
       try {
         if (CESIUM_ION_TOKEN) {
           viewer.terrainProvider = await Cesium.createWorldTerrainAsync();
           if (!stillActive()) return;
           viewer.imageryLayers.removeAll();
-          viewer.imageryLayers.addImageryProvider(await Cesium.IonImageryProvider.fromAssetId(2));
+          viewer.imageryLayers.addImageryProvider(
+            await Cesium.IonImageryProvider.fromAssetId(2)
+          );
         } else {
           viewer.imageryLayers.removeAll();
           viewer.imageryLayers.addImageryProvider(
-            new Cesium.OpenStreetMapImageryProvider({ url: "https://tile.openstreetmap.org/" }),
+            new Cesium.OpenStreetMapImageryProvider({
+              url: "https://tile.openstreetmap.org/",
+            })
           );
         }
       } catch (e) {
-        if (stillActive()) console.warn("Cesium Ion/terrain failed:", e.message);
+        if (stillActive())
+          console.warn(
+            "Cesium Ion/terrain failed:",
+            e instanceof Error ? e.message : String(e)
+          );
         return;
       }
       if (!stillActive()) return;
@@ -170,14 +202,14 @@ function CesiumViewer() {
     setEntitiesVisibilityByRange(viewer, events, start, end);
   }, [events]);
 
-  const handlePlayPause = () => {
+  const handlePlayPause = (): void => {
     const viewer = viewerRef.current;
     if (!viewer || viewer.isDestroyed()) return;
     viewer.clock.shouldAnimate = !viewer.clock.shouldAnimate;
     setIsPlaying(viewer.clock.shouldAnimate);
   };
 
-  const handleReset = () => {
+  const handleReset = (): void => {
     const viewer = viewerRef.current;
     if (!viewer || viewer.isDestroyed()) return;
     viewer.clock.shouldAnimate = false;
@@ -188,7 +220,9 @@ function CesiumViewer() {
   };
 
   const currentTimeLabel =
-    clockTime != null ? new Date(clockTime).toISOString().slice(11, 19) : "00:00:00";
+    clockTime != null
+      ? new Date(clockTime).toISOString().slice(11, 19)
+      : "00:00:00";
 
   return (
     <div className="cesium-viewer-wrap">
@@ -202,16 +236,27 @@ function CesiumViewer() {
       {error && (
         <div className="osint-error">
           <span>ACLED: {error}</span>
-          <button type="button" onClick={reload}>다시 시도</button>
+          <button type="button" onClick={reload}>
+            다시 시도
+          </button>
           {error.toLowerCase().includes("access denied") && (
-            <a href="https://acleddata.com/api-authentication" target="_blank" rel="noopener noreferrer" className="osint-error-link">
+            <a
+              href="https://acleddata.com/api-authentication"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="osint-error-link"
+            >
               계정·권한 안내
             </a>
           )}
         </div>
       )}
       <div className="clock-controls">
-        <button type="button" onClick={handlePlayPause} aria-label={isPlaying ? "일시정지" : "재생"}>
+        <button
+          type="button"
+          onClick={handlePlayPause}
+          aria-label={isPlaying ? "일시정지" : "재생"}
+        >
           {isPlaying ? "⏸ 일시정지" : "▶ 재생"}
         </button>
         <button type="button" onClick={handleReset} aria-label="처음으로">

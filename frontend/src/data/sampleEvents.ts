@@ -1,8 +1,10 @@
+import type { OsintEvent, EventTypeColorMap } from "../types/osint";
+
 /**
  * 샘플 OSINT 이벤트 데이터 (이란/테헤란 지역)
  * Phase 2: 하드코딩 데이터 → 이후 API/DB 연동으로 대체
  */
-export const sampleEvents = [
+export const sampleEvents: OsintEvent[] = [
   {
     id: "evt-1",
     lat: 35.6892,
@@ -46,7 +48,7 @@ export const sampleEvents = [
 ];
 
 /** 이벤트 타입별 Cesium 색상 (RGBA 0–1) */
-export const eventTypeColor = {
+export const eventTypeColor: EventTypeColorMap = {
   airstrike: [1, 0.2, 0.2, 1],
   gps_jam: [1, 0.9, 0.2, 1],
   military_activity: [0.3, 0.5, 1, 1],
