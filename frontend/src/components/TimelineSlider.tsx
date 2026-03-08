@@ -3,19 +3,32 @@ import { Timeline } from "vis-timeline";
 import { DataSet } from "vis-data";
 import "vis-timeline/styles/vis-timeline-graph2d.css";
 import "./TimelineSlider.css";
+import type { OsintEvent } from "../types/osint";
 
 /** 이란 공습 기간: 2026-02-28 00:00 ~ 24:00 (UTC) */
-const TIMELINE_MIN = new Date("2026-02-28T00:00:00Z");
-const TIMELINE_MAX = new Date("2026-02-28T23:59:59Z");
+export const TIMELINE_MIN = new Date("2026-02-28T00:00:00Z");
+export const TIMELINE_MAX = new Date("2026-02-28T23:59:59Z");
+
+export interface TimelineSliderProps {
+  events: OsintEvent[];
+  onRangeChange: (start: Date, end: Date) => void;
+  initialStart?: Date | string;
+  initialEnd?: Date | string;
+}
 
 /**
  * 타임라인 슬라이더 (vis-timeline)
  * - 범위: 2026-02-28
  * - 슬라이더/줌 시 보이는 구간으로 엔티티 필터링용 콜백
  */
-function TimelineSlider({ events, onRangeChange, initialStart, initialEnd }) {
-  const containerRef = useRef(null);
-  const timelineRef = useRef(null);
+function TimelineSlider({
+  events,
+  onRangeChange,
+  initialStart,
+  initialEnd,
+}: TimelineSliderProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const timelineRef = useRef<Timeline | null>(null);
   const onRangeChangeRef = useRef(onRangeChange);
   onRangeChangeRef.current = onRangeChange;
 
@@ -28,7 +41,7 @@ function TimelineSlider({ events, onRangeChange, initialStart, initialEnd }) {
         start: new Date(evt.time),
         content: evt.type,
         className: `vis-item-type-${evt.type}`,
-      })),
+      }))
     );
 
     const start = initialStart ? new Date(initialStart) : TIMELINE_MIN;
@@ -47,10 +60,10 @@ function TimelineSlider({ events, onRangeChange, initialStart, initialEnd }) {
       stack: false,
     });
 
-    const handleRangeChanged = () => {
+    const handleRangeChanged = (): void => {
       const win = timeline.getWindow();
       if (win && onRangeChangeRef.current) {
-        onRangeChangeRef.current(win.start, win.end);
+        onRangeChangeRef.current(win.start as Date, win.end as Date);
       }
     };
 
@@ -77,4 +90,3 @@ function TimelineSlider({ events, onRangeChange, initialStart, initialEnd }) {
 }
 
 export default TimelineSlider;
-export { TIMELINE_MIN, TIMELINE_MAX };
