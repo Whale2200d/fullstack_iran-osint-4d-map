@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState, useCallback } from "react";
 import * as Cesium from "cesium";
-import { sampleEvents, eventTypeColor } from "../data/sampleEvents";
+import { eventTypeColor } from "../data/sampleEvents";
+import { useOSINTEvents } from "../hooks/useOSINTEvents";
 import TimelineSlider, { TIMELINE_MIN, TIMELINE_MAX } from "./TimelineSlider";
 import "./CesiumViewer.css";
 
@@ -35,23 +36,46 @@ function setEntitiesVisibilityByCurrentTime(viewer, events, currentTime) {
   });
 }
 
+function addEntitiesFromEvents(viewer, events) {
+  if (!viewer || viewer.isDestroyed()) return;
+  events.forEach((evt) => {
+    const [r, g, b, a] = eventTypeColor[evt.type] || eventTypeColor.default;
+    viewer.entities.add({
+      id: evt.id,
+      position: Cesium.Cartesian3.fromDegrees(evt.lon, evt.lat, 0),
+      point: {
+        pixelSize: 12,
+        color: new Cesium.Color(r, g, b, a),
+        outlineColor: Cesium.Color.WHITE,
+        outlineWidth: 2,
+      },
+      name: `${evt.type} · ${(evt.time || "").slice(0, 16).replace("T", " ")}Z`,
+      description: `<p>${evt.desc || "—"}</p><p><small>${evt.time || ""} | ${evt.type}</small></p>`,
+    });
+  });
+}
+
 /**
- * Cesium 3D Globe 뷰어 + 타임라인 & 4D
- * - 테헤란 중심, 베이스맵, 네비게이션
- * - vis-timeline으로 시간 범위 필터, Cesium Clock 재생
+ * Cesium 3D Globe 뷰어 + 타임라인 & 4D + OSINT(ACLED) 연동
  */
 function CesiumViewer() {
   const containerRef = useRef(null);
   const viewerRef = useRef(null);
+  const rangeRef = useRef({ start: TIMELINE_MIN, end: TIMELINE_MAX });
   const [isPlaying, setIsPlaying] = useState(false);
   const [clockTime, setClockTime] = useState(TIMELINE_MIN.getTime());
 
+  const { events, loading, error, reload } = useOSINTEvents();
+  const eventsRef = useRef(events);
+  eventsRef.current = events;
+
   const onRangeChange = useCallback((start, end) => {
+    rangeRef.current = { start, end };
     const viewer = viewerRef.current;
     if (viewer && !viewer.isDestroyed()) {
-      setEntitiesVisibilityByRange(viewer, sampleEvents, start, end);
+      setEntitiesVisibilityByRange(viewer, events, start, end);
     }
-  }, []);
+  }, [events]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -87,36 +111,22 @@ function CesiumViewer() {
 
     viewerRef.current = viewer;
 
-    sampleEvents.forEach((evt) => {
-      const [r, g, b, a] = eventTypeColor[evt.type] || eventTypeColor.default;
-      viewer.entities.add({
-        id: evt.id,
-        position: Cesium.Cartesian3.fromDegrees(evt.lon, evt.lat, 0),
-        point: {
-          pixelSize: 12,
-          color: new Cesium.Color(r, g, b, a),
-          outlineColor: Cesium.Color.WHITE,
-          outlineWidth: 2,
-        },
-        name: `${evt.type} · ${evt.time.slice(0, 16).replace("T", " ")}Z`,
-        description: `<p>${evt.desc}</p><p><small>${evt.time} | ${evt.type}</small></p>`,
-      });
-    });
-
-    setEntitiesVisibilityByRange(viewer, sampleEvents, TIMELINE_MIN, TIMELINE_MAX);
-
     const onTick = () => {
-      if (viewer.clock.shouldAnimate) {
-        setEntitiesVisibilityByCurrentTime(viewer, sampleEvents, viewer.clock.currentTime);
+      if (!viewerRef.current || viewerRef.current.isDestroyed()) return;
+      const v = viewerRef.current;
+      if (v.clock.shouldAnimate) {
+        setEntitiesVisibilityByCurrentTime(v, eventsRef.current, v.clock.currentTime);
       }
-      setClockTime(Cesium.JulianDate.toDate(viewer.clock.currentTime).getTime());
+      setClockTime(Cesium.JulianDate.toDate(v.clock.currentTime).getTime());
     };
     const removeTick = viewer.scene.preRender.addEventListener(onTick);
 
     (async () => {
+      const stillActive = () => viewerRef.current === viewer && !viewer.isDestroyed();
       try {
         if (CESIUM_ION_TOKEN) {
           viewer.terrainProvider = await Cesium.createWorldTerrainAsync();
+          if (!stillActive()) return;
           viewer.imageryLayers.removeAll();
           viewer.imageryLayers.addImageryProvider(await Cesium.IonImageryProvider.fromAssetId(2));
         } else {
@@ -126,8 +136,10 @@ function CesiumViewer() {
           );
         }
       } catch (e) {
-        console.warn("Cesium Ion/terrain failed:", e.message);
+        if (stillActive()) console.warn("Cesium Ion/terrain failed:", e.message);
+        return;
       }
+      if (!stillActive()) return;
 
       viewer.camera.flyTo({
         destination: Cesium.Cartesian3.fromDegrees(51.42, 35.69, 4_500_000),
@@ -149,6 +161,15 @@ function CesiumViewer() {
     };
   }, []);
 
+  useEffect(() => {
+    const viewer = viewerRef.current;
+    if (!viewer || viewer.isDestroyed() || !events.length) return;
+    viewer.entities.removeAll();
+    addEntitiesFromEvents(viewer, events);
+    const { start, end } = rangeRef.current;
+    setEntitiesVisibilityByRange(viewer, events, start, end);
+  }, [events]);
+
   const handlePlayPause = () => {
     const viewer = viewerRef.current;
     if (!viewer || viewer.isDestroyed()) return;
@@ -162,7 +183,8 @@ function CesiumViewer() {
     viewer.clock.shouldAnimate = false;
     viewer.clock.currentTime = CLOCK_START.clone();
     setIsPlaying(false);
-    setEntitiesVisibilityByRange(viewer, sampleEvents, TIMELINE_MIN, TIMELINE_MAX);
+    rangeRef.current = { start: TIMELINE_MIN, end: TIMELINE_MAX };
+    setEntitiesVisibilityByRange(viewer, events, TIMELINE_MIN, TIMELINE_MAX);
   };
 
   const currentTimeLabel =
@@ -171,6 +193,23 @@ function CesiumViewer() {
   return (
     <div className="cesium-viewer-wrap">
       <div ref={containerRef} className="cesium-viewer-container" />
+      {loading && (
+        <div className="osint-loading" aria-live="polite">
+          <span className="osint-loading-spinner" />
+          OSINT 데이터 불러오는 중…
+        </div>
+      )}
+      {error && (
+        <div className="osint-error">
+          <span>ACLED: {error}</span>
+          <button type="button" onClick={reload}>다시 시도</button>
+          {error.toLowerCase().includes("access denied") && (
+            <a href="https://acleddata.com/api-authentication" target="_blank" rel="noopener noreferrer" className="osint-error-link">
+              계정·권한 안내
+            </a>
+          )}
+        </div>
+      )}
       <div className="clock-controls">
         <button type="button" onClick={handlePlayPause} aria-label={isPlaying ? "일시정지" : "재생"}>
           {isPlaying ? "⏸ 일시정지" : "▶ 재생"}
@@ -180,7 +219,7 @@ function CesiumViewer() {
         </button>
         <span className="clock-time">{currentTimeLabel} UTC</span>
       </div>
-      <TimelineSlider events={sampleEvents} onRangeChange={onRangeChange} />
+      <TimelineSlider events={events} onRangeChange={onRangeChange} />
     </div>
   );
 }
