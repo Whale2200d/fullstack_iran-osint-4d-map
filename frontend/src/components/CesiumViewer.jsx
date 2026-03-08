@@ -1,9 +1,9 @@
-import React, { useRef, useEffect } from 'react';
-import * as Cesium from 'cesium';
-import './CesiumViewer.css';
+import React, { useRef, useEffect } from "react";
+import * as Cesium from "cesium";
+import "./CesiumViewer.css";
 
 // Cesium Ion 무료 토큰: https://cesium.com/ion/tokens 에서 발급 후 .env에 REACT_APP_CESIUM_ION_TOKEN 설정
-const CESIUM_ION_TOKEN = process.env.REACT_APP_CESIUM_ION_TOKEN || '';
+const CESIUM_ION_TOKEN = process.env.REACT_APP_CESIUM_ION_TOKEN || "";
 
 /**
  * Cesium 3D Globe 뷰어 컴포넌트
@@ -47,25 +47,23 @@ function CesiumViewer() {
         if (CESIUM_ION_TOKEN) {
           viewer.terrainProvider = await Cesium.createWorldTerrainAsync();
           viewer.imageryLayers.removeAll();
-          viewer.imageryLayers.addImageryProvider(
-            await Cesium.IonImageryProvider.fromAssetId(2)
-          );
+          viewer.imageryLayers.addImageryProvider(await Cesium.IonImageryProvider.fromAssetId(2));
         } else {
           viewer.imageryLayers.removeAll();
           viewer.imageryLayers.addImageryProvider(
-            new Cesium.OpenStreetMapImageryProvider({ url: 'https://tile.openstreetmap.org/' })
+            new Cesium.OpenStreetMapImageryProvider({ url: "https://tile.openstreetmap.org/" }),
           );
         }
       } catch (e) {
-        console.warn('Cesium Ion/terrain failed:', e.message);
+        console.warn("Cesium Ion/terrain failed:", e.message);
       }
 
       viewer.camera.flyTo({
-        destination: Cesium.Cartesian3.fromDegrees(51.42, 35.69, 1_500_000),
+        destination: Cesium.Cartesian3.fromDegrees(51.42, 35.69, 4_500_000),
         duration: 1.5,
         orientation: {
           heading: 0,
-          pitch: Cesium.Math.toRadians(-45),
+          pitch: Cesium.Math.toRadians(-80),
           roll: 0,
         },
       });
